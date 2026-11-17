@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Build Your Resume</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="mobile-toggle">
+  <button id="mt-edit" class="active" onclick="setMobileView('form')">Edit</button>
+  <button id="mt-prev" onclick="setMobileView('preview')">Preview</button>
+</div>
+
+<!-- In-app browser banner at top -->
+<div id="inapp-banner" style="display:none;background:#FDECEA;border:1px solid #E8B4AB;color:#8A2E1E;padding:12px 16px;text-align:center;font-size:12px;font-weight:600;line-height:1.5;border-top:none;border-bottom:1px solid #E8B4AB;"></div>
+
+<div class="shell">
+  <div class="panel-form" id="panel-form">
+    <div style="text-align:center;padding:16px 0 4px;"><img src="assets/logo.png" alt="Arizona Marshallese Community" style="width:72px;height:auto;display:inline-block;opacity:0.9;"></div>
+    <div class="brandbar">
+      <div class="brandbar-text">
+        <h1>Build your resume</h1>
+        <p id="brandbar-hint">Complete each tab in order. Your info will be turned into a one-page resume. Download your PDF in the final tab.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <button id="lang-toggle" onclick="toggleLang()">🇲🇭 Translate to Marshallese</button>
+        <button id="start-over-btn" onclick="openStartOverModal()" style="display:none;border:1.5px solid #8A2E1E;background:#fff;color:#8A2E1E;font-size:12px;font-weight:700;padding:6px 10px;border-radius:20px;cursor:pointer;white-space:nowrap;">Start Over</button>
+      </div>
+    </div>
+    <div class="steps">
+      <button class="step-btn active" data-step="personal" onclick="goStep('personal')"><span class="num">1</span>Personal Info</button>
+      <button class="step-btn" data-step="experience" onclick="goStep('experience')"><span class="num">2</span>Experience</button>
+      <button class="step-btn" data-step="education" onclick="goStep('education')"><span class="num">3</span>Education</button>
+      <button class="step-btn" data-step="skills" onclick="goStep('skills')"><span class="num">4</span>Skills</button>
+      <button class="step-btn" data-step="statement" onclick="goStep('statement')"><span class="num">5</span>Summary</button>
+    </div>
+    <div class="form-scroll" id="form-scroll"></div>
+    <div class="privacy-note" id="privacy-note">Disclaimer: Your information is never saved, stored, or sent anywhere — everything stays in your browser and is only used to build this resume.</div>
+  </div>
+
+  <div class="panel-preview" id="panel-preview">
+    <div class="preview-toolbar">
+      <h2>Live preview</h2>
+      <span class="fit-note" id="fit-note">Checking page fit…</span>
+    </div>
+    <div class="rotate-prompt">
+      <svg viewBox="0 0 64 64" width="40" height="40" fill="none">
+        <rect x="22" y="6" width="20" height="36" rx="3" stroke="currentColor" stroke-width="2.5"/>
+        <circle cx="32" cy="40" r="1.4" fill="currentColor"/>
+        <path d="M46 16 A18 18 0 0 1 49 33" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M49 27 L49 33 L43 32" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <strong>Turn your phone sideways</strong>
+        <div>for a bigger view of your resume</div>
+      </div>
+    </div>
+    <div class="page-wrap">
+      <div id="resume-page"></div>
+    </div>
+  </div>
+</div>
+
+
+<div id="ios-save-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;max-width:340px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <h3 id="ios-save-title" style="margin:0 0 14px;color:#16233D;font-size:17px;">Your resume is ready!</h3>
+    <div id="ios-save-inapp-warning" style="display:none;text-align:left;background:#FDECEA;border:1px solid #E8B4AB;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;color:#8A2E1E;line-height:1.5;"></div>
+    <a id="ios-save-link" href="#" download="resume.pdf" target="_blank" rel="noopener" style="display:block;border:none;background:#B68D40;color:#fff;font-size:15px;font-weight:700;padding:12px 0;border-radius:8px;cursor:pointer;width:100%;text-decoration:none;box-sizing:border-box;">⬇ Open / Save my PDF</a>
+    <p style="font-size:12px;color:#6B7280;margin:12px 0 14px;line-height:1.5;">After tapping above, look for it in your phone's <strong>Downloads</strong> or <strong>Files</strong> app, or your browser's download tray.</p>
+    <button id="ios-save-close-btn" style="border:1px solid #D9D5C9;background:#fff;color:#16233D;font-size:14px;font-weight:600;padding:10px 0;border-radius:8px;cursor:pointer;width:100%;" onclick="closeSaveInstructions()">Close</button>
+  </div>
+</div>
+
+<!-- In-app browser warning (page load) -->
+<div id="inapp-warning-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#FDECEA;border:1px solid #E8B4AB;border-radius:14px;max-width:320px;width:100%;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <p id="inapp-warning-text" style="margin:0 0 16px;color:#8A2E1E;font-size:14px;line-height:1.6;"></p>
+    <button style="border:none;background:#8A2E1E;color:#fff;font-size:15px;font-weight:700;padding:12px 0;border-radius:8px;cursor:pointer;width:100%;" onclick="closeInappWarning()">Got it</button>
+  </div>
+</div>
+
+<!-- Download result modal -->
+<div id="download-result-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div id="download-result-content" style="background:#fff;border-radius:14px;max-width:320px;width:100%;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <!-- Content will be set by JavaScript -->
+  </div>
+</div>
+
+<!-- Start Over: first confirmation -->
+<div id="start-over-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;max-width:320px;width:100%;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <p style="margin:0 0 8px;color:var(--navy);font-size:16px;font-weight:700;">Start over?</p>
+    <p style="margin:0 0 20px;color:#3a3a3a;font-size:14px;line-height:1.6;">This will erase everything you've entered — your info, experience, skills, and summary — and take you back to a blank form.</p>
+    <div style="display:flex;gap:10px;">
+      <button style="flex:1;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:14px;font-weight:700;padding:11px 0;border-radius:8px;cursor:pointer;" onclick="closeStartOverModal()">Cancel</button>
+      <button style="flex:1;border:none;background:#8A2E1E;color:#fff;font-size:14px;font-weight:700;padding:11px 0;border-radius:8px;cursor:pointer;" onclick="proceedToStartOverConfirm()">Yes, Start Over</button>
+    </div>
+  </div>
+</div>
+
+<!-- Start Over: final confirmation -->
+<div id="start-over-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:14px;max-width:320px;width:100%;padding:24px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <p style="margin:0 0 8px;color:#8A2E1E;font-size:16px;font-weight:700;">Are you sure?</p>
+    <p style="margin:0 0 20px;color:#3a3a3a;font-size:14px;line-height:1.6;">This can't be undone. Once you start over, everything is gone for good.</p>
+    <div style="display:flex;gap:10px;">
+      <button style="flex:1;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:14px;font-weight:700;padding:11px 0;border-radius:8px;cursor:pointer;" onclick="closeStartOverModal()">No, Go Back</button>
+      <button style="flex:1;border:none;background:#8A2E1E;color:#fff;font-size:14px;font-weight:700;padding:11px 0;border-radius:8px;cursor:pointer;" onclick="doStartOver()">Yes, Erase Everything</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js?v=36"></script>
+
+</body>
+</html>
+<!-- deploy trigger 1784242718 -->
+<!-- retry Thu Jul 16 23:39:42 UTC 2026 -->
+<!-- retry Thu Jul 16 23:58:02 UTC 2026 -->
+<!-- retry Fri Jul 17 00:21:49 UTC 2026 -->
+<!-- retry Fri Jul 17 00:24:35 UTC 2026 attempt 5 -->
